@@ -1,0 +1,1811 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ドット画メーカー | 情報Ⅰ</title>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&family=DotGothic16&family=Press+Start+2P&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep:    #0a0e1a;
+    --bg-panel:   #111827;
+    --bg-card:    #1a2234;
+    --border:     #2a3a5c;
+    --accent:     #00e5ff;
+    --accent2:    #7c3aed;
+    --accent3:    #f59e0b;
+    --dot-on:     #00e5ff;
+    --dot-off:    #0d1b2e;
+    --text:       #e2e8f0;
+    --text-dim:   #64748b;
+    --error:      #ef4444;
+    --success:    #10b981;
+    --glow:       rgba(0,229,255,0.25);
+    /* フォント変数 */
+    --font-jp:    'Zen Maru Gothic', sans-serif;
+    --font-retro: 'DotGothic16', 'Press Start 2P', monospace;
+    --font-mono:  'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-jp);
+    background: var(--bg-deep);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── 背景グリッドパターン ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app-wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 16px;
+  }
+
+  /* ── ヘッダー ── */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-badge {
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    border-radius: 10px;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 0 20px rgba(0,229,255,0.3);
+    flex-shrink: 0;
+  }
+
+  .title-block h1 {
+    font-size: clamp(1rem, 2.5vw, 1.4rem);
+    font-weight: 400;
+    font-family: var(--font-retro);
+    letter-spacing: 0.03em;
+    background: linear-gradient(90deg, var(--accent), #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.4;
+  }
+
+  .title-block p {
+    font-size: 0.76rem;
+    color: var(--text-dim);
+    margin-top: 4px;
+    font-family: var(--font-jp);
+  }
+
+  .badge-info1 {
+    margin-left: auto;
+    font-size: 0.6rem;
+    padding: 5px 11px;
+    border-radius: 20px;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    white-space: nowrap;
+    font-family: var(--font-retro);
+    letter-spacing: 0.05em;
+  }
+
+  /* ── メインレイアウト ── */
+  .main-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+
+  @media (max-width: 768px) {
+    .main-layout { grid-template-columns: 1fr; }
+  }
+
+  /* ── パネル共通 ── */
+  .panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    border-radius: 16px 16px 0 0;
+  }
+
+  .panel-label {
+    font-size: 0.62rem;
+    font-family: var(--font-retro);
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-label::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    animation: blink 2s infinite;
+  }
+
+  @keyframes blink {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* ── モード切替 ── */
+  .mode-switch {
+    display: flex;
+    background: var(--bg-deep);
+    border-radius: 10px;
+    padding: 4px;
+    gap: 4px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+  }
+
+  .mode-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    font-family: var(--font-retro);
+    font-size: 0.68rem;
+    font-weight: 700;
+    transition: all 0.2s ease;
+    background: transparent;
+    color: var(--text-dim);
+    letter-spacing: 0.03em;
+  }
+
+  .mode-btn.active {
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    color: var(--bg-deep);
+    box-shadow: 0 0 16px rgba(0,229,255,0.3);
+  }
+
+  .mode-btn:not(.active):hover {
+    background: var(--bg-card);
+    color: var(--text);
+  }
+
+  /* ── テキストエリア行 ── */
+  .code-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  .code-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .row-num {
+    font-family: var(--font-retro);
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    width: 20px;
+    text-align: right;
+    flex-shrink: 0;
+    user-select: none;
+  }
+
+  .code-input {
+    flex: 1;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 8px 12px;
+    color: var(--accent);
+    font-family: var(--font-retro);
+    font-size: 0.9rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
+  }
+
+  .code-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(0,229,255,0.15);
+  }
+
+  .code-input.error {
+    border-color: var(--error) !important;
+    box-shadow: 0 0 0 2px rgba(239,68,68,0.2);
+  }
+
+  /* 設計書仕様：0.2s の精密なshake */
+  @keyframes shake {
+    0%   { transform: translateX(0); }
+    20%  { transform: translateX(-6px); }
+    40%  { transform: translateX(6px); }
+    60%  { transform: translateX(-5px); }
+    80%  { transform: translateX(5px); }
+    100% { transform: translateX(0); }
+  }
+  .input-error {
+    animation: shake 0.25s ease-in-out;
+    border-color: var(--error) !important;
+  }
+
+  .code-input::placeholder {
+    color: var(--text-dim);
+    opacity: 0.5;
+    letter-spacing: 0.1em;
+  }
+
+  .bit-hint {
+    font-size: 0.55rem;
+    font-family: var(--font-retro);
+    color: var(--text-dim);
+    display: flex;
+    justify-content: space-between;
+    padding: 0 8px;
+    margin-top: -4px;
+    margin-bottom: 4px;
+    user-select: none;
+  }
+
+  /* ── ボタン類 ── */
+  .action-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .btn {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-jp);
+    font-size: 0.82rem;
+    font-weight: 700;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    color: var(--bg-deep);
+    box-shadow: 0 0 12px rgba(0,229,255,0.2);
+  }
+  .btn-primary:hover {
+    box-shadow: 0 0 20px rgba(0,229,255,0.4);
+    transform: translateY(-1px);
+  }
+
+  .btn-secondary {
+    background: var(--bg-card);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,229,255,0.05);
+  }
+
+  .btn-amber {
+    background: rgba(245,158,11,0.15);
+    color: var(--accent3);
+    border: 1px solid rgba(245,158,11,0.3);
+  }
+  .btn-amber:hover {
+    background: rgba(245,158,11,0.25);
+    border-color: var(--accent3);
+  }
+
+  /* ── プリセット ── */
+  .preset-section {
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+  }
+
+  .preset-label {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    font-family: var(--font-retro);
+  }
+
+  .preset-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .preset-btn {
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--bg-deep);
+    color: var(--text-dim);
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-jp);
+    font-weight: 700;
+  }
+
+  .preset-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,229,255,0.05);
+  }
+
+  /* ── 右パネル：プレビュー ── */
+  .preview-panel {
+    position: sticky;
+    top: 20px;
+  }
+
+  /* ── グリッドキャンバス ── */
+  .canvas-wrapper {
+    display: flex;
+    justify-content: center;
+    padding: 8px 0 16px;
+  }
+
+  .grid-outer {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .grid-col-nums {
+    display: flex;
+    padding-left: 28px;
+    margin-bottom: 6px;
+  }
+
+  .grid-col-num {
+    width: 48px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    font-family: var(--font-retro);
+    color: var(--text-dim);
+  }
+
+  .grid-main-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+
+  .grid-row-num {
+    width: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    font-family: var(--font-retro);
+    color: var(--text-dim);
+  }
+
+  .dot-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 48px);
+    grid-template-rows: repeat(8, 48px);
+    gap: 4px;
+    background: var(--bg-deep);
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+  }
+
+  .dot-cell {
+    width: 48px;
+    height: 48px;
+    border-radius: 6px;
+    background: var(--dot-off);
+    transition: background 0.12s ease, box-shadow 0.12s ease, outline-color 0.1s ease, filter 0.1s ease;
+    cursor: pointer;
+    position: relative;
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+  }
+
+  .dot-cell:hover {
+    outline-color: rgba(255,255,255,0.7);
+    filter: brightness(1.5);
+    z-index: 2;
+  }
+
+  /* ── 統計エリア ── */
+  .stats-area {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .stat-card {
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 8px;
+    text-align: center;
+    position: relative;
+  }
+
+  .stat-card-formula {
+    font-size: 0.55rem;
+    font-family: var(--font-retro);
+    color: var(--text-dim);
+    display: block;
+    margin-bottom: 4px;
+    opacity: 0.7;
+    line-height: 1.3;
+  }
+
+  .stat-num {
+    font-family: var(--font-retro);
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--accent);
+    display: block;
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 0.62rem;
+    color: var(--text-dim);
+    margin-top: 4px;
+    display: block;
+    font-family: var(--font-jp);
+  }
+
+  /* ── カラーモード ── */
+  .color-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+
+  .color-control-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+  }
+
+  .color-swatch {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .color-swatch input[type="color"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ── ツールチップ ── */
+  .tooltip-overlay {
+    position: fixed;
+    background: var(--bg-panel);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.65rem;
+    font-family: var(--font-retro);
+    color: var(--accent);
+    pointer-events: none;
+    z-index: 1000;
+    display: none;
+    max-width: 200px;
+    box-shadow: 0 0 16px rgba(0,229,255,0.2);
+    line-height: 1.8;
+  }
+
+  /* ── ダウンロードセクション ── */
+  .download-section {
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+    margin-top: 14px;
+  }
+
+  /* ── エラーバナー ── */
+  .error-banner {
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.78rem;
+    color: var(--error);
+    margin-top: 8px;
+    display: none;
+    font-family: 'JetBrains Mono', monospace;
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── 変換アニメーション ── */
+  @keyframes pulse-glow {
+    0%   { box-shadow: 0 0 0 0 rgba(0,229,255,0.6); }
+    60%  { box-shadow: 0 0 0 10px rgba(0,229,255,0.15); }
+    100% { box-shadow: 0 0 0 16px rgba(0,229,255,0); }
+  }
+  .convert-flash { animation: pulse-glow 0.55s ease-out; }
+
+  /* 成功時：ステータスバー発光 */
+  @keyframes status-glow {
+    0%   { background: var(--bg-deep); border-color: var(--border); }
+    30%  { background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.6);
+           box-shadow: 0 0 12px rgba(16,185,129,0.3); }
+    100% { background: var(--bg-deep); border-color: var(--border); }
+  }
+  .success-glow { animation: status-glow 0.7s ease-out; }
+
+  /* ── フルカラー比較テーブル ── */
+  .compare-table {
+    border: 1px solid rgba(16,185,129,0.2);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .compare-header {
+    display: grid;
+    grid-template-columns: 90px 1fr 70px 70px;
+    background: rgba(16,185,129,0.12);
+    padding: 6px 10px;
+    font-size: 0.55rem;
+    font-family: var(--font-retro);
+    color: var(--success);
+    gap: 4px;
+    text-align: center;
+  }
+  .compare-header span:first-child { text-align: left; }
+  .compare-row {
+    display: grid;
+    grid-template-columns: 90px 1fr 70px 70px;
+    padding: 8px 10px;
+    gap: 4px;
+    align-items: center;
+    border-top: 1px solid rgba(16,185,129,0.12);
+  }
+  .compare-row-1bit  { background: rgba(0,229,255,0.04); }
+  .compare-row-24bit { background: rgba(124,58,237,0.06); }
+  .compare-badge {
+    font-size: 0.6rem;
+    font-family: var(--font-retro);
+    border-radius: 6px;
+    padding: 3px 7px;
+    text-align: center;
+    display: inline-block;
+    line-height: 1.4;
+  }
+  .compare-badge small { font-size: 0.5rem; display: block; opacity: 0.75; }
+  .badge-1bit  { background: rgba(0,229,255,0.15);  color: var(--accent);  border: 1px solid rgba(0,229,255,0.3); }
+  .badge-24bit { background: rgba(124,58,237,0.15); color: #c4b5fd;         border: 1px solid rgba(124,58,237,0.4); }
+  .compare-formula {
+    font-size: 0.62rem;
+    font-family: var(--font-retro);
+    color: var(--text-dim);
+    text-align: center;
+  }
+  .compare-formula em { font-style: normal; color: var(--accent3); font-weight: 700; }
+  .compare-val {
+    font-size: 0.75rem;
+    font-family: var(--font-retro);
+    color: var(--success);
+    text-align: center;
+  }
+  .compare-big {
+    color: #c4b5fd;
+    font-size: 0.85rem;
+  }
+  .compare-highlight {
+    background: linear-gradient(90deg, rgba(245,158,11,0.12), rgba(124,58,237,0.1));
+    padding: 8px 12px;
+    font-size: 0.72rem;
+    font-family: var(--font-jp);
+    color: var(--accent3);
+    text-align: center;
+    border-top: 1px solid rgba(245,158,11,0.2);
+    line-height: 1.5;
+  }
+  .compare-highlight strong {
+    font-size: 1rem;
+    color: #fbbf24;
+    font-family: var(--font-retro);
+  }
+
+  /* ── ON×24 サマリーバー ── */
+  .fc-summary-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    background: rgba(124,58,237,0.10);
+    border: 1px solid rgba(124,58,237,0.25);
+    border-radius: 9px;
+    padding: 9px 14px;
+    margin-bottom: 10px;
+  }
+  .fc-summary-label {
+    font-size: 0.62rem;
+    font-family: var(--font-retro);
+    color: #c4b5fd;
+    white-space: nowrap;
+  }
+  .fc-summary-calc {
+    font-size: 0.72rem;
+    font-family: var(--font-retro);
+    color: var(--text);
+    flex: 1;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .fc-summary-calc strong {
+    color: #c4b5fd;
+    font-size: 0.85rem;
+  }
+
+  /* ── スクロールバー ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg-deep); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── フッター ── */
+  footer {
+    text-align: center;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    font-family: var(--font-retro);
+    letter-spacing: 0.05em;
+    line-height: 1.8;
+  }
+
+  .scanline-effect {
+    display: inline-block;
+    position: relative;
+    overflow: hidden;
+  }
+  .scanline-effect::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0;
+    height: 2px;
+    background: rgba(0,229,255,0.06);
+    animation: scan 3s linear infinite;
+  }
+  @keyframes scan {
+    from { top: -10%; }
+    to { top: 110%; }
+  }
+
+  /* ── 使い方ガイド ── */
+  .howto-banner {
+    background: linear-gradient(135deg, rgba(124,58,237,0.12), rgba(0,229,255,0.08));
+    border: 1px solid rgba(0,229,255,0.2);
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .howto-banner::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent2), var(--accent), var(--accent3));
+  }
+  .howto-title {
+    font-size: 0.62rem;
+    font-family: var(--font-retro);
+    color: var(--accent3);
+    letter-spacing: 0.06em;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .howto-steps {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .howto-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    flex: 1;
+    min-width: 160px;
+    background: rgba(0,0,0,0.25);
+    border-radius: 10px;
+    padding: 10px 12px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .step-badge {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-retro);
+    font-size: 0.6rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .step-badge.s1 { background: rgba(0,229,255,0.2);  color: var(--accent);  border: 1px solid var(--accent); }
+  .step-badge.s2 { background: rgba(124,58,237,0.2); color: #a78bfa;        border: 1px solid #7c3aed; }
+  .step-badge.s3 { background: rgba(245,158,11,0.2); color: var(--accent3); border: 1px solid var(--accent3); }
+  .step-text {
+    font-size: 0.76rem;
+    color: var(--text);
+    line-height: 1.45;
+  }
+  .step-text strong {
+    font-weight: 700;
+    display: block;
+    margin-bottom: 2px;
+    font-size: 0.8rem;
+  }
+
+  /* ── データ量カード ── */
+  .data-calc-section {
+    margin-top: 14px;
+    background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(0,229,255,0.05));
+    border: 1px solid rgba(16,185,129,0.25);
+    border-radius: 12px;
+    padding: 14px;
+  }
+  .data-calc-title {
+    font-size: 0.62rem;
+    font-family: var(--font-retro);
+    color: var(--success);
+    letter-spacing: 0.06em;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .data-calc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .data-calc-card {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(16,185,129,0.2);
+    border-radius: 9px;
+    padding: 9px 8px;
+    text-align: center;
+  }
+  .data-calc-num {
+    font-family: var(--font-retro);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--success);
+    display: block;
+    line-height: 1;
+  }
+  .data-calc-unit {
+    font-size: 0.58rem;
+    color: rgba(16,185,129,0.7);
+    font-family: var(--font-retro);
+    display: block;
+    margin-top: 3px;
+  }
+  .data-calc-formula {
+    font-size: 0.6rem;
+    font-family: var(--font-retro);
+    color: var(--text-dim);
+    display: block;
+    margin-top: 5px;
+    opacity: 0.85;
+  }
+  .data-hint {
+    background: rgba(16,185,129,0.07);
+    border-left: 3px solid var(--success);
+    border-radius: 0 6px 6px 0;
+    padding: 7px 10px;
+    font-size: 0.75rem;
+    color: rgba(16,185,129,0.9);
+    line-height: 1.6;
+    font-family: var(--font-jp);
+  }
+  .data-hint-formula-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 7px;
+  }
+  .formula-chip {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(16,185,129,0.3);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 0.58rem;
+    font-family: var(--font-retro);
+    color: var(--success);
+    white-space: nowrap;
+  }
+
+  /* ── ドットセルにクリック誘導オーバーレイ ── */
+  .dot-cell::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 5px;
+    background: rgba(255,255,255,0);
+    border: 2px solid transparent;
+    transition: background 0.12s ease, border-color 0.12s ease;
+  }
+  .dot-cell:hover::after {
+    background: rgba(255,255,255,0.15);
+    border-color: rgba(255,255,255,0.5);
+  }
+  .grid-click-hint {
+    text-align: center;
+    font-size: 0.6rem;
+    font-family: var(--font-retro);
+    color: var(--accent3);
+    margin-top: 6px;
+    letter-spacing: 0.04em;
+    opacity: 0.8;
+  }
+</style>
+</head>
+<body>
+<div class="app-wrapper">
+
+  <!-- ヘッダー -->
+  <header>
+    <div class="logo-badge">🔲</div>
+    <div class="title-block">
+      <h1>二進数・十六進数 ドット画メーカー</h1>
+      <p>ビットマップ画像の仕組みを手で体験しよう</p>
+    </div>
+    <div class="badge-info1">情報Ⅰ</div>
+  </header>
+
+  <!-- 使い方ガイド -->
+  <div class="howto-banner">
+    <div class="howto-title">💡 STEP BY STEP — 使い方ガイド</div>
+    <div class="howto-steps">
+      <div class="howto-step">
+        <div class="step-badge s1">1</div>
+        <div class="step-text">
+          <strong>絵を描く</strong>
+          左の「エディタ」に 0 か 1 を打ち込むか、右の「プレビュー」のドットを直接クリックして絵を描こう
+        </div>
+      </div>
+      <div class="howto-step">
+        <div class="step-badge s2">2</div>
+        <div class="step-text">
+          <strong>変換して確認</strong>
+          「⇄ 変換」ボタンで二進数 ↔ 十六進数を切り替えて、同じ絵が別の表記になる仕組みを確認しよう
+        </div>
+      </div>
+      <div class="howto-step">
+        <div class="step-badge s3">3</div>
+        <div class="step-text">
+          <strong>作品を保存</strong>
+          完成したら「📷 PNG保存」で画像として保存。「📄 テキスト保存」でコードも記録できるよ
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- メインレイアウト -->
+  <div class="main-layout">
+
+    <!-- 左：エディタパネル -->
+    <div class="panel">
+      <div class="panel-label">コードエディタ</div>
+
+      <!-- モード切替 -->
+      <div class="mode-switch">
+        <button class="mode-btn active" id="btn-bin" onclick="setMode('bin')">
+          🔵 二進数（0/1）
+        </button>
+        <button class="mode-btn" id="btn-hex" onclick="setMode('hex')">
+          🟣 十六進数（0-F）
+        </button>
+      </div>
+
+      <!-- ビット位置ガイド（二進数モードのみ） -->
+      <div class="bit-hint" id="bit-hint">
+        <span>2⁷=128</span><span>2⁶=64</span><span>2⁵=32</span><span>2⁴=16</span>
+        <span>2³=8</span><span>2²=4</span><span>2¹=2</span><span>2⁰=1</span>
+      </div>
+
+      <!-- 入力行 -->
+      <div class="code-rows" id="code-rows"></div>
+
+      <!-- エラー表示 -->
+      <div class="error-banner" id="error-banner">⚠ 使用できない文字が含まれています</div>
+
+      <!-- アクションボタン -->
+      <div class="action-row">
+        <button class="btn btn-primary" onclick="convertMode()">
+          ⇄ 変換
+        </button>
+        <button class="btn btn-secondary" onclick="clearAll()">
+          🗑 クリア
+        </button>
+        <button class="btn btn-secondary" onclick="invertAll()">
+          ⊟ 反転
+        </button>
+      </div>
+
+      <!-- プリセット -->
+      <div class="preset-section">
+        <div class="preset-label">▸ サンプルを読み込む</div>
+        <div class="preset-row">
+          <button class="preset-btn" onclick="loadPreset('heart')">❤ ハート</button>
+          <button class="preset-btn" onclick="loadPreset('sword')">⚔ 剣</button>
+          <button class="preset-btn" onclick="loadPreset('star')">★ 星</button>
+          <button class="preset-btn" onclick="loadPreset('smiley')">😊 スマイル</button>
+          <button class="preset-btn" onclick="loadPreset('arrow')">→ 矢印</button>
+          <button class="preset-btn" onclick="loadPreset('letter_A')">🔤 文字A</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右：プレビューパネル -->
+    <div class="panel preview-panel">
+      <div class="panel-label">ドット画プレビュー（8×8）</div>
+
+      <!-- カラー設定 -->
+      <div class="color-controls">
+        <div class="color-control-item">
+          <span>1のカラー:</span>
+          <div class="color-swatch" id="swatch-on" style="background:#00e5ff;">
+            <input type="color" value="#00e5ff" id="color-on" oninput="updateColors()">
+          </div>
+        </div>
+        <div class="color-control-item">
+          <span>0のカラー:</span>
+          <div class="color-swatch" id="swatch-off" style="background:#0d1b2e;">
+            <input type="color" value="#0d1b2e" id="color-off" oninput="updateColors()">
+          </div>
+        </div>
+        <button class="btn btn-secondary" style="font-size:0.72rem;padding:5px 10px;" onclick="resetColors()">
+          リセット
+        </button>
+      </div>
+
+      <!-- グリッド -->
+      <div class="canvas-wrapper">
+        <div class="grid-outer">
+          <div class="grid-col-nums" id="col-nums"></div>
+          <div id="grid-rows-wrapper"></div>
+          <div class="grid-click-hint">👆 ドットをクリックして直接編集できます</div>
+        </div>
+      </div>
+
+      <!-- 統計 -->
+      <div class="stats-area">
+        <div class="stat-card">
+          <span class="stat-card-formula">8×8=64 total</span>
+          <span class="stat-num" id="stat-on">0</span>
+          <span class="stat-label">ONドット（1）</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card-formula">64－ON bits</span>
+          <span class="stat-num" id="stat-off">64</span>
+          <span class="stat-label">OFFドット（0）</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card-formula">ON÷64×100</span>
+          <span class="stat-num" id="stat-pct">0%</span>
+          <span class="stat-label">塗りつぶし率</span>
+        </div>
+      </div>
+
+      <!-- データ量計算機能 -->
+      <div class="data-calc-section">
+        <div class="data-calc-title">📐 データ量を計算してみよう</div>
+
+        <!-- 基本3カード -->
+        <div class="data-calc-grid">
+          <div class="data-calc-card">
+            <span class="data-calc-num" id="stat-1bit-bits">0</span>
+            <span class="data-calc-unit">bits（1bit）</span>
+            <span class="data-calc-formula" id="stat-1bit-formula">0px×1=0</span>
+          </div>
+          <div class="data-calc-card">
+            <span class="data-calc-num" id="stat-1bit-bytes">0</span>
+            <span class="data-calc-unit">Bytes（1bit）</span>
+            <span class="data-calc-formula" id="stat-1bit-bytes-formula">0÷8=0</span>
+          </div>
+          <div class="data-calc-card">
+            <span class="data-calc-num" id="stat-used-bytes">0</span>
+            <span class="data-calc-unit">ONドット数</span>
+            <span class="data-calc-formula" id="stat-used-formula">現在 0/64</span>
+          </div>
+        </div>
+
+        <!-- ON×24 サマリーバー -->
+        <div class="fc-summary-bar">
+          <span class="fc-summary-label">🎨 ON pixels × 24bit =</span>
+          <span class="fc-summary-calc"><span id="fc-summary-px">0</span> × 24 = <strong id="fc-summary-bits">0</strong> bits (<strong id="fc-summary-bytes">0</strong> Bytes)</span>
+        </div>
+
+        <!-- フルカラー比較テーブル -->
+        <div class="compare-table">
+          <div class="compare-header">
+            <span>モード</span>
+            <span>計算式</span>
+            <span>bits</span>
+            <span>Bytes</span>
+          </div>
+          <div class="compare-row compare-row-1bit">
+            <span class="compare-badge badge-1bit">1bit<br><small>白黒</small></span>
+            <span class="compare-formula" id="mono-formula"><em>0</em>px×<em>1</em></span>
+            <span class="compare-val" id="mono-bits">0</span>
+            <span class="compare-val" id="mono-bytes">0</span>
+          </div>
+          <div class="compare-row compare-row-24bit">
+            <span class="compare-badge badge-24bit">24bit<br><small>フルカラー</small></span>
+            <span class="compare-formula" id="fc-formula"><em>0</em>px×<em>24</em></span>
+            <span class="compare-val compare-big" id="fc-bits">0</span>
+            <span class="compare-val compare-big" id="fc-bytes">0</span>
+          </div>
+          <div class="compare-highlight" id="compare-highlight-msg">
+            🎉 フルカラーにするとデータ量は <strong>24倍</strong> に増える！
+          </div>
+        </div>
+
+        <div class="data-hint">
+          💬 <strong>1に塗られたドット</strong>を各bit数で表現した場合のデータ量です。
+          1bit（白黒）では1ドット＝1bit、フルカラーでは赤・緑・青それぞれ8bit（256段階）＝ <strong>24bit/pixel</strong> 必要になります。
+          <div class="data-hint-formula-row">
+            <span class="formula-chip">ONピクセル数×1</span>
+            <span class="formula-chip">ONピクセル数×24</span>
+            <span class="formula-chip">8bits=1Byte</span>
+            <span class="formula-chip">RGB×8=24bit</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ダウンロード -->
+      <div class="download-section">
+        <div class="action-row">
+          <button class="btn btn-amber" onclick="downloadPNG()">
+            📷 PNG保存
+          </button>
+          <button class="btn btn-secondary" onclick="downloadTXT()">
+            📄 テキスト保存
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    Dot Maker &nbsp;|&nbsp; 情報Ⅰ ビットマップ学習ツール &nbsp;|&nbsp; <span style="color:var(--accent)">8×8 = 64 bits</span>
+  </footer>
+</div>
+
+<!-- ツールチップ -->
+<div class="tooltip-overlay" id="tooltip"></div>
+
+<script>
+// ─────────────────────────────────────────────
+//  状態管理
+// ─────────────────────────────────────────────
+let mode = 'bin'; // 'bin' | 'hex'
+const ROWS = 8;
+
+// 各行のビットデータ（0か1の配列）
+let pixelData = Array.from({length: ROWS}, () => Array(8).fill(0));
+
+// カラー
+let colorOn  = '#00e5ff';
+let colorOff = '#0d1b2e';
+
+// ─────────────────────────────────────────────
+//  プリセット
+// ─────────────────────────────────────────────
+const PRESETS = {
+  heart: [
+    '01100110',
+    '11111111',
+    '11111111',
+    '11111111',
+    '01111110',
+    '00111100',
+    '00011000',
+    '00000000',
+  ],
+  sword: [
+    '00000001',
+    '00000011',
+    '00000110',
+    '00001100',
+    '00111000',
+    '01110000',
+    '11100000',
+    '01000000',
+  ],
+  star: [
+    '00010000',
+    '00111000',
+    '11111110',
+    '00111000',
+    '01101100',
+    '11000110',
+    '00000000',
+    '00000000',
+  ],
+  smiley: [
+    '00111100',
+    '01000010',
+    '10100101',
+    '10000001',
+    '10100101',
+    '10011001',
+    '01000010',
+    '00111100',
+  ],
+  arrow: [
+    '00000000',
+    '00010000',
+    '00110000',
+    '01111110',
+    '00110000',
+    '00010000',
+    '00000000',
+    '00000000',
+  ],
+  letter_A: [
+    '00011000',
+    '00111100',
+    '01100110',
+    '11000011',
+    '11111111',
+    '11000011',
+    '11000011',
+    '00000000',
+  ],
+};
+
+// ─────────────────────────────────────────────
+//  初期化
+// ─────────────────────────────────────────────
+function init() {
+  buildGrid();
+  buildInputRows();
+  renderDots();
+}
+
+// ─────────────────────────────────────────────
+//  グリッド構築
+// ─────────────────────────────────────────────
+function buildGrid() {
+  // 列番号
+  const colNums = document.getElementById('col-nums');
+  colNums.innerHTML = '';
+  for (let c = 0; c < 8; c++) {
+    const d = document.createElement('div');
+    d.className = 'grid-col-num';
+    d.textContent = c;
+    colNums.appendChild(d);
+  }
+
+  // 行
+  const wrapper = document.getElementById('grid-rows-wrapper');
+  wrapper.innerHTML = '';
+  for (let r = 0; r < ROWS; r++) {
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'grid-main-row';
+    rowDiv.style.marginBottom = '3px';
+
+    // 行番号
+    const rowNum = document.createElement('div');
+    rowNum.className = 'grid-row-num';
+    rowNum.textContent = r;
+    rowDiv.appendChild(rowNum);
+
+    // ドットグリッド（1行分）
+    const gridRow = document.createElement('div');
+    gridRow.style.display = 'flex';
+    gridRow.style.gap = '3px';
+
+    for (let c = 0; c < 8; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'dot-cell';
+      cell.id = `cell-${r}-${c}`;
+      cell.addEventListener('click', () => toggleCell(r, c));
+      cell.addEventListener('mouseenter', (e) => showTooltip(e, r, c));
+      cell.addEventListener('mouseleave', hideTooltip);
+      gridRow.appendChild(cell);
+    }
+
+    rowDiv.appendChild(gridRow);
+    wrapper.appendChild(rowDiv);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  入力行構築
+// ─────────────────────────────────────────────
+function buildInputRows() {
+  const container = document.getElementById('code-rows');
+  container.innerHTML = '';
+
+  for (let r = 0; r < ROWS; r++) {
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'code-row';
+
+    const num = document.createElement('div');
+    num.className = 'row-num';
+    num.textContent = r;
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'code-input';
+    input.id = `input-${r}`;
+    input.maxLength = mode === 'bin' ? 8 : 2;
+    input.placeholder = mode === 'bin' ? '00000000' : '00';
+    input.spellcheck = false;
+    input.autocomplete = 'off';
+    input.value = rowToString(r);
+
+    input.addEventListener('input', () => onInputChange(r));
+    input.addEventListener('keydown', (e) => onInputKeydown(e, r));
+
+    rowDiv.appendChild(num);
+    rowDiv.appendChild(input);
+    container.appendChild(rowDiv);
+  }
+}
+
+function rowToString(r) {
+  const bits = pixelData[r];
+  if (mode === 'bin') {
+    return bits.join('');
+  } else {
+    // 8ビット → 上位4ビット + 下位4ビット → 2桁16進数
+    const high = bits.slice(0,4).reduce((a,b,i) => a + b * (1 << (3-i)), 0);
+    const low  = bits.slice(4,8).reduce((a,b,i) => a + b * (1 << (3-i)), 0);
+    return (high.toString(16) + low.toString(16)).toUpperCase();
+  }
+}
+
+// ─────────────────────────────────────────────
+//  AudioContext 管理
+//  Chrome/Safari では「ユーザー操作（クリック等）後」でないと
+//  AudioContext を再生できない。一度だけ作成して使い回すことで
+//  suspended → running への resume() が確実に動く。
+// ─────────────────────────────────────────────
+let _audioCtx = null;
+
+function getAudioCtx() {
+  if (!_audioCtx) {
+    try {
+      _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch(e) { return null; }
+  }
+  return _audioCtx;
+}
+
+// ページ上の最初のユーザー操作で AudioContext を resume する
+// （autoplay policy 対策）
+function resumeAudioCtx() {
+  const ctx = getAudioCtx();
+  if (ctx && ctx.state === 'suspended') {
+    ctx.resume().catch(() => {});
+  }
+}
+document.addEventListener('click',     resumeAudioCtx, { once: false });
+document.addEventListener('keydown',   resumeAudioCtx, { once: false });
+document.addEventListener('touchstart',resumeAudioCtx, { once: false });
+
+// ─────────────────────────────────────────────
+//  エラー音（設計書仕様：矩形波150Hz 低音ビープ）
+// ─────────────────────────────────────────────
+function playErrorSound() {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  try {
+    // suspended 状態なら resume してから発音
+    const play = () => {
+      const oscillator = ctx.createOscillator();
+      const gainNode   = ctx.createGain();
+      oscillator.type = 'square';                                   // レトロ矩形波
+      oscillator.frequency.setValueAtTime(150, ctx.currentTime);   // 低音
+      gainNode.gain.setValueAtTime(0.10, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      oscillator.start();
+      oscillator.stop(ctx.currentTime + 0.12);
+    };
+    if (ctx.state === 'suspended') {
+      ctx.resume().then(play).catch(() => {});
+    } else {
+      play();
+    }
+  } catch(e) { /* 未対応環境では無視 */ }
+}
+
+// ─────────────────────────────────────────────
+//  成功音（短い上昇音ピン）
+// ─────────────────────────────────────────────
+function playSuccessSound() {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  try {
+    const play = () => {
+      const oscillator = ctx.createOscillator();
+      const gainNode   = ctx.createGain();
+      oscillator.type = 'square';
+      oscillator.frequency.setValueAtTime(880,  ctx.currentTime);
+      oscillator.frequency.setValueAtTime(1100, ctx.currentTime + 0.06);
+      gainNode.gain.setValueAtTime(0.07, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      oscillator.start();
+      oscillator.stop(ctx.currentTime + 0.15);
+    };
+    if (ctx.state === 'suspended') {
+      ctx.resume().then(play).catch(() => {});
+    } else {
+      play();
+    }
+  } catch(e) {}
+}
+
+// ─────────────────────────────────────────────
+//  入力変化ハンドラ
+// ─────────────────────────────────────────────
+function onInputChange(r) {
+  const input = document.getElementById(`input-${r}`);
+  const val = input.value.toUpperCase();
+  input.value = val;
+
+  let valid = true;
+  let bits = Array(8).fill(0);
+
+  if (mode === 'bin') {
+    if (val.length > 0 && !/^[01]{0,8}$/.test(val)) {
+      valid = false;
+    } else {
+      const padded = val.padEnd(8, '0').slice(0, 8);
+      bits = padded.split('').map(Number);
+    }
+  } else {
+    if (val.length > 0 && !/^[0-9A-F]{0,2}$/.test(val)) {
+      valid = false;
+    } else if (val.length === 1) {
+      const n = parseInt(val, 16);
+      bits = [0,0,0,0, ...n.toString(2).padStart(4,'0').split('').map(Number)];
+    } else if (val.length === 2) {
+      const n = parseInt(val, 16);
+      bits = n.toString(2).padStart(8,'0').split('').map(Number);
+    } else {
+      bits = Array(8).fill(0);
+    }
+  }
+
+  if (!valid) {
+    // エラー演出：シェイク＋ビープ音
+    input.classList.remove('input-error', 'error');
+    void input.offsetWidth; // アニメーションリセット
+    input.classList.add('error', 'input-error');
+    playErrorSound();
+    showErrorBanner();
+    // シェイクclassは0.25s後に除去（再トリガー可能にする）
+    setTimeout(() => input.classList.remove('input-error'), 300);
+    return;
+  }
+
+  input.classList.remove('error', 'input-error');
+  hideErrorBanner();
+  pixelData[r] = bits;
+  renderDots();
+  updateStats();
+}
+
+function onInputKeydown(e, r) {
+  if (e.key === 'Enter') {
+    const next = document.getElementById(`input-${Math.min(r+1, ROWS-1)}`);
+    if (next) next.focus();
+  }
+}
+
+// ─────────────────────────────────────────────
+//  ドット描画
+// ─────────────────────────────────────────────
+function renderDots() {
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < 8; c++) {
+      const cell = document.getElementById(`cell-${r}-${c}`);
+      if (!cell) continue;
+      const isOn = pixelData[r][c] === 1;
+      cell.style.background  = isOn ? colorOn : colorOff;
+      cell.style.boxShadow   = isOn ? `0 0 8px ${colorOn}66, inset 0 0 6px rgba(255,255,255,0.15)` : 'none';
+    }
+  }
+}
+
+// ─────────────────────────────────────────────
+//  セルクリックでトグル
+// ─────────────────────────────────────────────
+function toggleCell(r, c) {
+  pixelData[r][c] = pixelData[r][c] === 0 ? 1 : 0;
+  renderDots();
+  syncInputFromData();
+  updateStats();
+}
+
+function syncInputFromData() {
+  for (let r = 0; r < ROWS; r++) {
+    const input = document.getElementById(`input-${r}`);
+    if (input) {
+      input.value = rowToString(r);
+      input.classList.remove('error', 'input-error');
+    }
+  }
+  hideErrorBanner();
+}
+
+// ─────────────────────────────────────────────
+//  統計更新（データ量計算：ONドット数に連動）
+// ─────────────────────────────────────────────
+function updateStats() {
+  // ── 基本カウント ──
+  let onCount = 0;
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < 8; c++)
+      if (pixelData[r][c] === 1) onCount++;
+  const offCount = 64 - onCount;
+  const pct = Math.round(onCount / 64 * 100);
+
+  document.getElementById('stat-on').textContent  = onCount;
+  document.getElementById('stat-off').textContent = offCount;
+  document.getElementById('stat-pct').textContent = pct + '%';
+
+  // ── 1bit（白黒）データ量：ONドット数に連動 ──
+  // 計算式：ONドット数 × 1 bit = ? bits → ÷8 = ? Bytes
+  const monoBits  = onCount * 1;               // ONドット × 1bit
+  const monoBytes = Math.ceil(monoBits / 8);   // ÷8 → Bytes
+
+  const usedEl    = document.getElementById('stat-used-bytes');
+  const formulaEl = document.getElementById('stat-used-formula');
+  if (usedEl)    usedEl.textContent    = onCount;
+  if (formulaEl) formulaEl.textContent = `現在 ${onCount}/64`;
+
+  // 基本3カード（1bit側）
+  const b1bitsEl    = document.getElementById('stat-1bit-bits');
+  const b1bytesEl   = document.getElementById('stat-1bit-bytes');
+  const b1fmlaEl    = document.getElementById('stat-1bit-formula');
+  const b1bfmlaEl   = document.getElementById('stat-1bit-bytes-formula');
+  if (b1bitsEl)  b1bitsEl.textContent  = monoBits;
+  if (b1bytesEl) b1bytesEl.textContent = monoBytes;
+  if (b1fmlaEl)  b1fmlaEl.textContent  = `${onCount}px×1=${monoBits}`;
+  if (b1bfmlaEl) b1bfmlaEl.textContent = `${monoBits}÷8=${monoBytes}`;
+
+  // 比較テーブル 1bit行
+  const monoFormulaEl = document.getElementById('mono-formula');
+  const monoBitsEl    = document.getElementById('mono-bits');
+  const monoBytesEl   = document.getElementById('mono-bytes');
+  if (monoFormulaEl) monoFormulaEl.innerHTML = `<em>${onCount}</em>px×<em>1</em>`;
+  if (monoBitsEl)    monoBitsEl.textContent  = monoBits;
+  if (monoBytesEl)   monoBytesEl.textContent = monoBytes;
+
+  // ── 24bit（フルカラー）動的計算 ──
+  // 計算式：ONドット数 × 24 bits = ? bits → ÷8 = ? Bytes
+  const fcBits  = onCount * 24;
+  const fcBytes = Math.ceil(fcBits / 8);
+
+  const fcFormulaEl = document.getElementById('fc-formula');
+  const fcBitsEl    = document.getElementById('fc-bits');
+  const fcBytesEl   = document.getElementById('fc-bytes');
+  const fcMsgEl     = document.getElementById('compare-highlight-msg');
+
+  if (fcFormulaEl) {
+    fcFormulaEl.innerHTML = `<em>${onCount}</em>px×<em>24</em>`;
+  }
+  if (fcBitsEl)  fcBitsEl.textContent  = fcBits.toLocaleString();
+  if (fcBytesEl) fcBytesEl.textContent = fcBytes.toLocaleString();
+
+  // ── サマリーバー（ON×24が一目でわかる表示）──
+  const sumPxEl    = document.getElementById('fc-summary-px');
+  const sumBitsEl  = document.getElementById('fc-summary-bits');
+  const sumBytesEl = document.getElementById('fc-summary-bytes');
+  if (sumPxEl)    sumPxEl.textContent    = onCount;
+  if (sumBitsEl)  sumBitsEl.textContent  = fcBits.toLocaleString();
+  if (sumBytesEl) sumBytesEl.textContent = fcBytes.toLocaleString();
+
+  // ── compare-highlight メッセージをON数に応じて切替 ──
+  if (fcMsgEl) {
+    if (onCount === 0) {
+      fcMsgEl.innerHTML =
+        `💡 ドットを塗るとフルカラーのデータ量がリアルタイムで計算されます`;
+    } else {
+      fcMsgEl.innerHTML =
+        `🎨 <strong>${onCount}</strong> pixels × 24bit = <strong>${fcBytes} Bytes</strong>&nbsp;&nbsp;`+
+        `<span style="color:var(--accent);font-size:0.7em">（白黒の${onCount > 0 ? onCount : '?'}px分の24倍）</span>`;
+    }
+  }
+}
+
+// ─────────────────────────────────────────────
+//  モード切替
+// ─────────────────────────────────────────────
+function setMode(newMode) {
+  mode = newMode;
+  document.getElementById('btn-bin').classList.toggle('active', mode === 'bin');
+  document.getElementById('btn-hex').classList.toggle('active', mode === 'hex');
+  document.getElementById('bit-hint').style.display = mode === 'bin' ? 'flex' : 'none';
+
+  for (let r = 0; r < ROWS; r++) {
+    const input = document.getElementById(`input-${r}`);
+    if (!input) continue;
+    input.maxLength = mode === 'bin' ? 8 : 2;
+    input.placeholder = mode === 'bin' ? '00000000' : '00';
+    input.value = rowToString(r);
+    input.classList.remove('error', 'input-error');
+  }
+  hideErrorBanner();
+}
+
+// ─────────────────────────────────────────────
+//  変換ボタン
+// ─────────────────────────────────────────────
+function convertMode() {
+  const next = mode === 'bin' ? 'hex' : 'bin';
+  setMode(next);
+
+  // 成功演出：フラッシュ + 音
+  const rows = document.getElementById('code-rows');
+  rows.classList.remove('convert-flash');
+  void rows.offsetWidth;
+  rows.classList.add('convert-flash');
+  setTimeout(() => rows.classList.remove('convert-flash'), 600);
+
+  // ステータスバー発光
+  const panel = document.querySelector('.panel-label');
+  if (panel) {
+    panel.classList.add('success-glow');
+    setTimeout(() => panel.classList.remove('success-glow'), 750);
+  }
+
+  playSuccessSound();
+}
+
+// ─────────────────────────────────────────────
+//  クリア・反転
+// ─────────────────────────────────────────────
+function clearAll() {
+  pixelData = Array.from({length: ROWS}, () => Array(8).fill(0));
+  syncInputFromData();
+  renderDots();
+  updateStats();
+}
+
+function invertAll() {
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < 8; c++)
+      pixelData[r][c] = pixelData[r][c] === 0 ? 1 : 0;
+  syncInputFromData();
+  renderDots();
+  updateStats();
+}
+
+// ─────────────────────────────────────────────
+//  プリセット読み込み
+// ─────────────────────────────────────────────
+function loadPreset(name) {
+  const data = PRESETS[name];
+  if (!data) return;
+  for (let r = 0; r < ROWS; r++) {
+    pixelData[r] = data[r].split('').map(Number);
+  }
+  syncInputFromData();
+  renderDots();
+  updateStats();
+}
+
+// ─────────────────────────────────────────────
+//  カラー設定
+// ─────────────────────────────────────────────
+function updateColors() {
+  colorOn  = document.getElementById('color-on').value;
+  colorOff = document.getElementById('color-off').value;
+  document.getElementById('swatch-on').style.background  = colorOn;
+  document.getElementById('swatch-off').style.background = colorOff;
+  renderDots();
+}
+
+function resetColors() {
+  colorOn  = '#00e5ff';
+  colorOff = '#0d1b2e';
+  document.getElementById('color-on').value  = colorOn;
+  document.getElementById('color-off').value = colorOff;
+  document.getElementById('swatch-on').style.background  = colorOn;
+  document.getElementById('swatch-off').style.background = colorOff;
+  renderDots();
+}
+
+// ─────────────────────────────────────────────
+//  ツールチップ
+// ─────────────────────────────────────────────
+function showTooltip(e, r, c) {
+  const tooltip = document.getElementById('tooltip');
+  const bitPos = 7 - c;
+  const weight = Math.pow(2, bitPos);
+  const state  = pixelData[r][c] === 1 ? 'ON (1) 🟦' : 'OFF (0) ⬛';
+  const action = pixelData[r][c] === 1 ? '→ クリックで OFF に' : '→ クリックで ON に';
+  tooltip.innerHTML =
+    `<b>行 ${r}, 列 ${c}</b><br>` +
+    `ビット位置: 2<sup>${bitPos}</sup> = ${weight}<br>` +
+    `現在の値: ${state}<br>` +
+    `<span style="color:var(--accent3);font-size:0.7rem">${action}</span>`;
+  tooltip.style.display = 'block';
+  moveTooltip(e);
+}
+
+function moveTooltip(e) {
+  const tooltip = document.getElementById('tooltip');
+  const x = e.clientX + 14;
+  const y = e.clientY - 10;
+  tooltip.style.left = x + 'px';
+  tooltip.style.top  = y + 'px';
+}
+
+function hideTooltip() {
+  document.getElementById('tooltip').style.display = 'none';
+}
+
+document.addEventListener('mousemove', (e) => {
+  const t = document.getElementById('tooltip');
+  if (t.style.display === 'block') moveTooltip(e);
+});
+
+// ─────────────────────────────────────────────
+//  エラーバナー
+// ─────────────────────────────────────────────
+function showErrorBanner() {
+  const b = document.getElementById('error-banner');
+  if (mode === 'bin') {
+    b.textContent = '⚠ 二進数モードでは 0 と 1 のみ入力できます';
+  } else {
+    b.textContent = '⚠ 十六進数モードでは 0〜9, A〜F のみ入力できます';
+  }
+  b.style.display = 'block';
+}
+function hideErrorBanner() {
+  document.getElementById('error-banner').style.display = 'none';
+}
+
+// ─────────────────────────────────────────────
+//  PNG ダウンロード
+// ─────────────────────────────────────────────
+function downloadPNG() {
+  const SCALE = 32;
+  const canvas = document.createElement('canvas');
+  canvas.width  = 8 * SCALE;
+  canvas.height = 8 * SCALE;
+  const ctx = canvas.getContext('2d');
+
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < 8; c++) {
+      ctx.fillStyle = pixelData[r][c] === 1 ? colorOn : colorOff;
+      ctx.fillRect(c * SCALE, r * SCALE, SCALE, SCALE);
+    }
+  }
+
+  const link = document.createElement('a');
+  link.download = 'dotart.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+
+  // 保存準備完了演出
+  const saveBtn = document.querySelector('.btn-amber');
+  if (saveBtn) {
+    saveBtn.classList.add('success-glow');
+    setTimeout(() => saveBtn.classList.remove('success-glow'), 750);
+  }
+  playSuccessSound();
+}
+
+// ─────────────────────────────────────────────
+//  テキスト ダウンロード
+// ─────────────────────────────────────────────
+function downloadTXT() {
+  let text = `# ドット画メーカー 出力\n# モード: ${mode === 'bin' ? '二進数' : '十六進数'}\n\n`;
+  for (let r = 0; r < ROWS; r++) {
+    text += `行${r}: ${rowToString(r)}\n`;
+  }
+  text += `\n# ビットパターン (0/1)\n`;
+  for (let r = 0; r < ROWS; r++) {
+    text += pixelData[r].join('') + '\n';
+  }
+
+  const blob = new Blob([text], {type: 'text/plain'});
+  const link = document.createElement('a');
+  link.download = 'dotart.txt';
+  link.href = URL.createObjectURL(blob);
+  link.click();
+}
+
+// ─────────────────────────────────────────────
+//  起動
+// ─────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
